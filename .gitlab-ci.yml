@@ -1,0 +1,29 @@
+.golang_docker:
+  image: golang:1.20-alpine
+  services:
+    - name: docker:${DOCKER_VERSION}-dind
+  before_script:
+    - apk add --no-cache git
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: '1'
+    DOCKER_TLS_CERTDIR: '/certs'
+    DOCKER_CERT_PATH: '/certs/client'
+    DOCKER_DRIVER: overlay2
+    DOCKER_VERSION: '23.0.4'
+
+.dagger:
+  extends: [.golang_docker]
+  before_script:
+    - !reference [.golang_docker, before_script]
+    - apk add --no-cache docker-cli
+
+build:
+  extends: [.dagger]
+  script:
+    - go run ./ci
+  artifacts:
+    expose_as: build
+    paths:
+      - build/
+    expire_in: 1 week
